@@ -4,7 +4,7 @@ This project is a 2D combat prototype built in Unity, focusing on clean architec
 
 ## Demo Video
 
-[![Player attacking](C:\Users\DELL\OneDrive\Videos\Captures\ForMyGameVideo\Demo.gif)]
+![Player attacking](Assets/README-Image/Demo.gif)
 
 ## Features
 - 2D player movement (left/right, jump, flip)
