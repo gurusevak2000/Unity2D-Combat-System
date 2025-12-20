@@ -6,6 +6,12 @@ This project is a 2D combat prototype built in Unity, focusing on clean architec
 
 ![Player attacking](Assets/README-Image/Demo.gif)
 
+##Demo Images
+![My Game Screenshot1](Assets/README-Image/Image1.png)
+
+![My Game Screenshot2](Assets/README-Image/Image2.png)
+
+
 ## Features
 - 2D player movement (left/right, jump, flip)
 - Ground detection using Raycast2D
