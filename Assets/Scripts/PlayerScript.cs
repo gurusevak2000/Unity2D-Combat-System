@@ -1,27 +1,29 @@
+using System;
 using UnityEngine;
 
 public class PlayerScript : MonoBehaviour
 {
-    private Animator animator;
-    public Rigidbody2D rb;
+    protected Animator animator;
+    protected Rigidbody2D rb;
 
     [Header("Attack details")]
-    [SerializeField] private float attackRadius = 1f;
-    [SerializeField] private Transform attackingPoint;
-    [SerializeField] private LayerMask enemyLayer;
+    [SerializeField] protected float attackRadius = 1f;
+    [SerializeField] protected Transform attackingPoint;
+    [SerializeField] protected LayerMask WhatIsTarget;
 
-    public float speed = 10f;
-    public float jumpForce = 10f;
-
+    [Header("Movement details")]
+    [SerializeField] protected float speed = 10f;
+    [SerializeField] protected float jumpForce = 10f;
     private bool facingRight = true;
-    public float groundCheckDistance =10f;
-    public bool IsGrounded;
-    public LayerMask WhatIsGround;
     public bool canMove = true;
     public bool canJump = true;
 
+    [Header("Ground Check details")]
+    [SerializeField] protected float groundCheckDistance =10f;
+    [SerializeField] protected bool IsGrounded;
+    [SerializeField] protected LayerMask WhatIsGround;
 
-    void Awake()
+    private void Awake()
     {   
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponentInChildren<Animator>();
@@ -33,27 +35,24 @@ public class PlayerScript : MonoBehaviour
     }
 
     // Update is called once per frame
-    void LateUpdate()
+    protected virtual void Update()
     {
         float horizontalInput = Input.GetAxis("Horizontal");
-        if(canMove)
-            rb.linearVelocity = new Vector2(horizontalInput * speed, rb.linearVelocity.y);
-        else
-            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
+        HandleMovement(horizontalInput);
 
-        if(Input.GetKeyDown(KeyCode.W) && IsGrounded && canJump)//Jumping
+        if (Input.GetKeyDown(KeyCode.W) && IsGrounded && canJump)//Jumping
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
-        else if(Input.GetKeyUp(KeyCode.W))//This makes the jump shorter if the player lets go early
+        else if (Input.GetKeyUp(KeyCode.W))//This makes the jump shorter if the player lets go early
         {
-            if(rb.linearVelocity.y > 0)
+            if (rb.linearVelocity.y > 0)
             {
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * 0.5f);
             }
         }
 
-        if(Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space))
             PlayerAttack();
 
         HandleAnimation();
@@ -61,14 +60,28 @@ public class PlayerScript : MonoBehaviour
         HandleGroundCheckCollions();
     }
 
-    public void DamageEnemies()
+    protected virtual void HandleMovement(float horizontalInput)
+    {
+        if (canMove)
+            rb.linearVelocity = new Vector2(horizontalInput * speed, rb.linearVelocity.y);
+        else
+            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
+    }
+
+    public void DamageTarget()
     {
         Debug.Log("DamageEnemies called!");
-        Collider2D[] enemyColliders = Physics2D.OverlapCircleAll(attackingPoint.position, attackRadius, enemyLayer);
+        Collider2D[] enemyColliders = Physics2D.OverlapCircleAll(attackingPoint.position, attackRadius, WhatIsTarget);
         foreach(Collider2D enemy in enemyColliders)
         {
-            enemy.GetComponent<Enemy>().TakeDamage();
+            PlayerScript entityTarget = enemy.GetComponent<PlayerScript>();
+            entityTarget.TakeDamage();
         }
+    }
+
+    private void TakeDamage()
+    {
+        throw new NotImplementedException();
     }
 
     //Enable or disable player movement and jumping
@@ -92,7 +105,7 @@ public class PlayerScript : MonoBehaviour
         facingRight = !facingRight;
     }
 
-    private void PlayerAttack()
+    protected virtual void PlayerAttack()
     {
         if(IsGrounded)
         {
@@ -102,7 +115,7 @@ public class PlayerScript : MonoBehaviour
         
     }
 
-    void HandleAnimation()
+    protected void HandleAnimation()
     {  
         animator.SetBool("IsGrounded", IsGrounded);
         animator.SetFloat("yVelocity", rb.linearVelocity.y);
@@ -110,7 +123,7 @@ public class PlayerScript : MonoBehaviour
         
     }
 
-    private void HandleGroundCheckCollions()
+    protected virtual void HandleGroundCheckCollions()
     {
         IsGrounded = Physics2D.Raycast(transform.position, Vector2.down, groundCheckDistance,WhatIsGround);//result of raycast can true or false
         //either we detect something or not
@@ -120,7 +133,10 @@ public class PlayerScript : MonoBehaviour
     {
         Gizmos.color = Color.red;
         Gizmos.DrawLine(transform.position, transform.position + new Vector3(0, -groundCheckDistance, 0));
-        Gizmos.DrawWireSphere(attackingPoint.position, attackRadius);
+        if (attackingPoint != null)
+        {
+            Gizmos.DrawWireSphere(attackingPoint.position, attackRadius);
+        }
     }
 
 }

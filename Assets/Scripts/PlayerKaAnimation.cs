@@ -11,7 +11,7 @@ public class PlayerKaAnimation : MonoBehaviour
 
     public void TriggerAttackDamage()
     {
-        player.DamageEnemies();
+        player.DamageTarget();
     }
 
     public void DisableMovementAndJump()
