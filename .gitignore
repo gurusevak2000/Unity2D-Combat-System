@@ -15,3 +15,8 @@ UserSettings/
 # OS
 .DS_Store
 Thumbs.db
+INSERT INTO admins (username, password)
+VALUES (
+  'admin',
+  '$2b$10$La/LS9e0nD.fnKVCeDnqYunTEXbQ0siEpbLUFg0E5f03EcqQ72k82'
+);

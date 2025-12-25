@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class PlayerKaAnimation : MonoBehaviour
+public class Player_KaAnimationEvents : MonoBehaviour
 {
     private PlayerScript player;
     

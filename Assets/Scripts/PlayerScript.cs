@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.InputSystem.XInput;
 
 public class PlayerScript : MonoBehaviour
 {
@@ -14,14 +15,17 @@ public class PlayerScript : MonoBehaviour
     [Header("Movement details")]
     [SerializeField] protected float speed = 10f;
     [SerializeField] protected float jumpForce = 10f;
+    protected int faceing_Direction = 1;//Dame i am stupid
     private bool facingRight = true;
-    public bool canMove = true;
-    public bool canJump = true;
+    protected bool canMove = true;
+    private bool canJump = true;
+    private float xInput;
+    [SerializeField] private float flipDeadZone = 0.05f;
 
     [Header("Ground Check details")]
-    [SerializeField] protected float groundCheckDistance =10f;
-    [SerializeField] protected bool IsGrounded;
-    [SerializeField] protected LayerMask WhatIsGround;
+    [SerializeField] private float groundCheckDistance =10f;
+    protected bool IsGrounded;
+    [SerializeField] private LayerMask WhatIsGround;
 
     private void Awake()
     {   
@@ -37,33 +41,53 @@ public class PlayerScript : MonoBehaviour
     // Update is called once per frame
     protected virtual void Update()
     {
-        float horizontalInput = Input.GetAxis("Horizontal");
-        HandleMovement(horizontalInput);
+        //float horizontalInput = Input.GetAxis("Horizontal");
+        //HandleMovement(horizontalInput);
 
-        if (Input.GetKeyDown(KeyCode.W) && IsGrounded && canJump)//Jumping
-        {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-        }
-        else if (Input.GetKeyUp(KeyCode.W))//This makes the jump shorter if the player lets go early
-        {
-            if (rb.linearVelocity.y > 0)
-            {
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * 0.5f);
-            }
-        }
+        //if (Input.GetKeyDown(KeyCode.W) && IsGrounded && canJump)//Jumping
+        //{
+        //    rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+        //}
+        //else if (Input.GetKeyUp(KeyCode.W))//This makes the jump shorter if the player lets go early
+        //{
+        //    if (rb.linearVelocity.y > 0)
+        //    {
+        //        rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * 0.5f);
+        //    }
+        //}
 
-        if (Input.GetKeyDown(KeyCode.Space))
-            PlayerAttack();
+        //if (Input.GetKeyDown(KeyCode.Space))
+        //    PlayerAttack();
 
         HandleAnimation();
         HandleFilp();
         HandleGroundCheckCollions();
+        HandleInput();
+        HandleMovement();
     }
 
-    protected virtual void HandleMovement(float horizontalInput)
+    private void Jump()
     {
+        if(IsGrounded)
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+    }
+
+    private void HandleInput()
+    {
+        xInput = Input.GetAxisRaw("Horizontal");
+
+        if (Input.GetKeyDown(KeyCode.Space))
+            Jump();
+
+        if (Input.GetKeyDown(KeyCode.W))
+            HandleAttack();
+
+    }
+
+    protected virtual void HandleMovement()
+    {   
         if (canMove)
-            rb.linearVelocity = new Vector2(horizontalInput * speed, rb.linearVelocity.y);
+            rb.linearVelocity = new Vector2(xInput * speed, rb.linearVelocity.y);
         else
             rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
     }
@@ -85,37 +109,40 @@ public class PlayerScript : MonoBehaviour
     }
 
     //Enable or disable player movement and jumping
-    public void EnableJumpandMovement(bool enable)
+    public virtual void EnableJumpandMovement(bool enable)
     {
         canMove = enable;
         canJump = enable;
     }
 
-    private void HandleFilp()
+    protected void HandleFilp()
     {
-        if(rb.linearVelocity.x > 0 && !facingRight)
+        if (Mathf.Abs(rb.linearVelocity.x) < flipDeadZone)
+            return;
+
+        if (rb.linearVelocity.x > 0 && !facingRight)
             Flip();
 
         else if(rb.linearVelocity.x < 0 && facingRight)
             Flip();
     }
-    private void Flip()
+    protected void Flip()
     {
         transform.Rotate(0f, 180f, 0f);
         facingRight = !facingRight;
+        faceing_Direction *= -1;
     }
 
-    protected virtual void PlayerAttack()
+    protected virtual void HandleAttack()
     {
         if(IsGrounded)
         {
                 animator.SetTrigger("Attack");
                 //rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);//Stop moving when attacking//Now it is not useful
         }
-        
     }
 
-    protected void HandleAnimation()
+    protected virtual void HandleAnimation()
     {  
         animator.SetBool("IsGrounded", IsGrounded);
         animator.SetFloat("yVelocity", rb.linearVelocity.y);
