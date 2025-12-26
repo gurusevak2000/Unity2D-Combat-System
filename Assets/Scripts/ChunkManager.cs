@@ -10,6 +10,11 @@ public class ChunkManager : MonoBehaviour
     [SerializeField] private int initialChunks = 3;
     [SerializeField] private int maxChunks = 5;
 
+    [Header("Camera Settings")]
+    [SerializeField] private Camera mainCamera;
+    [SerializeField] private float spawnBuffer = 5f;
+
+
     private Queue<LevelChunk> activeChunks = new Queue<LevelChunk>();
     private Transform lastEndPoint;
 
@@ -20,7 +25,11 @@ public class ChunkManager : MonoBehaviour
 
     private void Update()
     {
-        if (player.position.x > lastEndPoint.position.x - 5f)
+        float cameraRightEdge =
+        mainCamera.transform.position.x +
+        mainCamera.orthographicSize * mainCamera.aspect;
+
+        if (cameraRightEdge + spawnBuffer >= lastEndPoint.position.x)
         {
             SpawnChunk();
         }

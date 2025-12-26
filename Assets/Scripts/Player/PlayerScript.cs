@@ -27,7 +27,7 @@ public class PlayerScript : MonoBehaviour
     protected bool IsGrounded;
     [SerializeField] private LayerMask WhatIsGround;
 
-    private void Awake()
+    protected virtual void Awake()
     {   
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponentInChildren<Animator>();
@@ -84,15 +84,21 @@ public class PlayerScript : MonoBehaviour
 
     }
 
-    protected virtual void HandleMovement()
-    {   
-        if (canMove)
-            rb.linearVelocity = new Vector2(xInput * speed, rb.linearVelocity.y);
-        else
-            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
+    protected override void HandleMovement()
+    {
+        if (!canMove) return;
+
+        // STOP movement during knockback
+        if (TryGetComponent<BaseCharacter>(out var baseChar))
+        {
+            if (baseChar.IsKnocked) return;
+        }
+
+        rb.velocity = new Vector2(xInput * speed, rb.velocity.y);
     }
 
-    public void DamageTarget()
+
+    /* public void DamageTarget()
     {
         Debug.Log("DamageEnemies called!");
         Collider2D[] enemyColliders = Physics2D.OverlapCircleAll(attackingPoint.position, attackRadius, WhatIsTarget);
@@ -106,7 +112,7 @@ public class PlayerScript : MonoBehaviour
     private void TakeDamage()
     {
         throw new NotImplementedException();
-    }
+    } */
 
     //Enable or disable player movement and jumping
     public virtual void EnableJumpandMovement(bool enable)
@@ -156,7 +162,7 @@ public class PlayerScript : MonoBehaviour
         //either we detect something or not
     }
 
-    void OnDrawGizmos()
+    void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
         Gizmos.DrawLine(transform.position, transform.position + new Vector3(0, -groundCheckDistance, 0));

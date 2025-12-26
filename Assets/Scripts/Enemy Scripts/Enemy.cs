@@ -1,26 +1,49 @@
-// 24-12-2025 AI-Tag
-// This was created with the help of Assistant, a Unity Artificial Intelligence product.
-
 using UnityEngine;
 
-public class EnemyAI : PlayerScript
+public class Enemy : PlayerScript
 {
+    [Header("Detection Settings")]
+    [SerializeField] private float detectionRange = 2f;
+    [SerializeField] private LayerMask playerLayer;
+
+    private EnemyCombat combat;
+    private Transform player;
     private bool playerDetected;
-    private bool isAttacking;
     private float patrolTimer;
     private float patrolDirection = 1; // 1 for right, -1 for left
 
     [Header("Patrol Settings")]
     [SerializeField] private float patrolDuration = 3f;
 
+    protected override void Awake()
+    {
+        base.Awake(); // Initialize rb and animator from PlayerScript
+        combat = GetComponent<EnemyCombat>();
+    }
+
     protected override void Update()
     {
+        HandleDetection();
         HandlePatrol();
         HandleMovement();
         HandleAnimation();
         HandleGroundCheckCollions();
         HandleFilp();
         HandleAttack();
+    }
+
+    private void HandleDetection()
+    {
+        Collider2D hit = Physics2D.OverlapCircle(transform.position, detectionRange, playerLayer);
+        playerDetected = hit != null;
+        if (playerDetected)
+        {
+            player = hit.transform;
+        }
+        else
+        {
+            player = null;
+        }
     }
 
     private void HandlePatrol()
@@ -38,9 +61,13 @@ public class EnemyAI : PlayerScript
 
     protected override void HandleMovement()
     {
-        if (playerDetected || isAttacking)
+        if (playerDetected && combat != null && combat.IsAttacking)
         {
-            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y); // Stop moving when attacking or player detected
+            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y); // Stop moving when attacking
+        }
+        else if (playerDetected)
+        {
+            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y); // Stop moving when player detected
         }
         else
         {
@@ -51,31 +78,25 @@ public class EnemyAI : PlayerScript
     protected override void HandleGroundCheckCollions()
     {
         base.HandleGroundCheckCollions();
-        playerDetected = Physics2D.OverlapCircle(
-            attackingPoint.position,
-            attackRadius,
-            WhatIsTarget
-        ) != null;
     }
 
     protected override void HandleAttack()
     {
-        if (playerDetected && !isAttacking)
+        if (playerDetected && player != null && combat != null)
         {
-            isAttacking = true;
-            animator.SetTrigger("attack");
-            Invoke(nameof(ResetAttack), 1f); // Reset attack state after 1 second
+            combat.TryAttack(player);
         }
-    }
-
-    private void ResetAttack()
-    {
-        isAttacking = false;
     }
 
     protected override void HandleAnimation()
     {
         animator.SetFloat("xVelocity", Mathf.Abs(rb.linearVelocity.x));
         animator.SetBool("IsGrounded", IsGrounded);
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, detectionRange);
     }
 }

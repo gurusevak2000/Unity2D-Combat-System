@@ -128,15 +128,15 @@ AnimationClip:
     floatParameter: 0
     intParameter: 0
     messageOptions: 0
-  - time: 0.55
-    functionName: TriggerAttackDamage
+  - time: 0.5
+    functionName: EnemyPerformAttack
     data: 
     objectReferenceParameter: {fileID: 0}
     floatParameter: 0
     intParameter: 0
     messageOptions: 0
   - time: 1.2
-    functionName: EnableMovementAndJump
+    functionName: EnemyEndAttack
     data: 
     objectReferenceParameter: {fileID: 0}
     floatParameter: 0

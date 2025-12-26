@@ -64,11 +64,17 @@
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.2.14f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Enemy.cs" />
-    <Compile Include="Assets\Scripts\PlayerScript.cs" />
+    <Compile Include="Assets\Scripts\Player\PlayerScript.cs" />
+    <Compile Include="Assets\Scripts\Enemy Scripts\EnemyAnimationEvents.cs" />
+    <Compile Include="Assets\Scripts\CameraFollowWithLookAhead.cs" />
+    <Compile Include="Assets\Scripts\Player\PlayerCombat.cs" />
+    <Compile Include="Assets\Scripts\BaseCharacter.cs" />
+    <Compile Include="Assets\Scripts\Enemy Scripts\EnemyCombat.cs" />
+    <Compile Include="Assets\Scripts\Player\Player_KaAnimationEvents.cs" />
+    <Compile Include="Assets\Scripts\Enemy Scripts\Enemy.cs" />
     <Compile Include="Assets\Scripts\ChunkManager.cs" />
     <Compile Include="Assets\Scripts\LevelChunk.cs" />
-    <Compile Include="Assets\Scripts\Player_KaAnimationEvents.cs" />
+    <Compile Include="Assets\Scripts\Universal Scripts\Health.cs" />
     <Compile Include="Assets\Scripts\CameraFollow.cs" />
   </ItemGroup>
   <ItemGroup>
