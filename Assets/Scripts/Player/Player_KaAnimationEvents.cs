@@ -2,12 +2,10 @@ using UnityEngine;
 
 public class Player_KaAnimationEvents : MonoBehaviour
 {
-    private PlayerScript player;
-    private PlayerCombat playerCombat;
+    private PlayerCombat playerCombat;  // CHANGED: now gets PlayerCombat, not PlayerScript
     
     public void Awake()
     {
-        player = GetComponentInParent<PlayerScript>();//Assuming Player script is in parent GameObject .assumption was right
         playerCombat = GetComponentInParent<PlayerCombat>();
     }
 
@@ -24,11 +22,11 @@ public class Player_KaAnimationEvents : MonoBehaviour
 
     public void DisableMovementAndJump()
     {
-        player.EnableJumpandMovement(false);
+        playerCombat.DisableMovementAndJump();  // Calls the new method in PlayerCombat
     }
 
     public void EnableMovementAndJump()
     {
-        player.EnableJumpandMovement(true);
+        playerCombat.EnableMovementAndJump();   // Calls the new method in PlayerCombat
     }
 }
