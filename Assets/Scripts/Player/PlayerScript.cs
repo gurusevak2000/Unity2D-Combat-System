@@ -50,5 +50,14 @@ public class PlayerScript : BaseCharacter
     }
 
     //Draw Gizmo method 
+    protected override void OnDrawGizmosSelected()
+    {
+        // Your existing ground/facing gizmos...
+
+        if (TryGetComponent<PlayerCombat>(out var combat))
+        {
+            combat.DrawAttackGizmos();  // Clean, encapsulated, centralized
+        }
+    }
     
 }
