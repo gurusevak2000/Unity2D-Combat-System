@@ -1,4 +1,5 @@
 using UnityEngine;
+//using System;
 
 public class CameraFollowWithLookAhead : MonoBehaviour
 {
@@ -16,7 +17,7 @@ public class CameraFollowWithLookAhead : MonoBehaviour
 
     [Header("SCREEN SHAKE! 🔥")]
     [SerializeField] private float shakeMagnitude = 0.3f;
-    [SerializeField] private float shakeDuration = 0.2f;
+    //[SerializeField] private float shakeDuration = 0.2f;
 
     // Shake variables
     private Vector3 originalPos;
@@ -67,22 +68,22 @@ public class CameraFollowWithLookAhead : MonoBehaviour
     {
         if (currentShakeTime > 0)
         {
-            // Random shake offset
+            // Explicitly use UnityEngine.Random to avoid ambiguity
             shakeOffset = new Vector3(
-                Random.Range(-1f, 1f) * shakeMagnitude,
-                Random.Range(-1f, 1f) * shakeMagnitude,
+                UnityEngine.Random.Range(-1f, 1f) * shakeMagnitude,
+                UnityEngine.Random.Range(-1f, 1f) * shakeMagnitude,
                 0
             );
             currentShakeTime -= Time.deltaTime;
         }
         else
         {
-            shakeOffset = Vector3.zero; // Reset shake
+            shakeOffset = Vector3.zero;
         }
     }
 
-    // PUBLIC METHOD - Call this from Health.cs!
-    public void TriggerShake(float duration , float magnitude )
+    // Rest of your code stays exactly the same
+    public void TriggerShake(float duration, float magnitude)
     {
         currentShakeTime = duration;
         shakeMagnitude = magnitude;

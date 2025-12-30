@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
+
 
 public class Health : MonoBehaviour
 {
@@ -23,37 +25,64 @@ public class Health : MonoBehaviour
         animator = GetComponentInChildren<Animator>();
     }
 
-    // SINGLE TakeDamage method - with shake + sparks!
     public void TakeDamage(int damage)
     {
-        currentHealth -= damage;
+        // Always play hit feedback
         animator.SetTrigger("Hit");
 
-        // SHAKE CAMERA!
-        CameraFollowWithLookAhead camera = Object.FindFirstObjectByType<CameraFollowWithLookAhead>();
-        //Debug.Log($"Camera found: {(camera != null ? camera.name : "NULL")}");
-        if (camera != null)
-            camera.TriggerShake(0.15f, 0.5f);
+        // Find camera once (modern + fast way)
+        var camFollow = Object.FindFirstObjectByType<CameraFollowWithLookAhead>();
 
-        // SPAWN SPARKS - ONLY ONCE!
+        // Shake if we found it
+        if (camFollow != null)
+            camFollow.TriggerShake(0.15f, 0.5f);
+
+        // Sparks
         if (hitSparkPrefab != null)
         {
-            GameObject sparks = Instantiate(hitSparkPrefab, 
-                transform.position + Vector3.up * 0.5f, 
+            GameObject sparks = Instantiate(hitSparkPrefab,
+                transform.position + Vector3.up * 0.5f,
                 Quaternion.identity);
-            
-            // Auto-destroy after 1 second
             Destroy(sparks, 0.5f);
         }
 
+#if ENABLE_CHEATS
+        // CHEAT: Infinite Health → ignore damage completely
+        if (CheatManager.Instance != null && CheatManager.Instance.InfiniteHealth)
+        {
+            return; // Exit early — no damage applied
+        }
+#endif
+
+        // Normal damage (only runs if no infinite health cheat)
+        currentHealth -= damage;
+
         if (currentHealth <= 0)
         {
+            if (gameObject.CompareTag("Enemy"))
+            {
+                var manager = FindFirstObjectByType<ProgressionManager>();  
+                if (manager != null)
+                {
+                    manager.AddXp(50);
+                }
+                else
+                {
+                    Debug.LogWarning("ProgressionManager not found in scene!");
+                }
+            }
+
             Die();
         }
     }
 
     private void Die()
     {
+#if ENABLE_CHEATS
+        if (CheatManager.Instance != null && CheatManager.Instance.InfiniteHealth)
+            return;
+#endif
+
         animator.SetTrigger("Die");
         Invoke(nameof(DestroySelf), deathDelay);
     }
@@ -61,5 +90,12 @@ public class Health : MonoBehaviour
     private void DestroySelf()
     {
         Destroy(gameObject);
+    }
+
+    public void SetMaxHealth(int newMax, bool healToFull = false)
+    {
+        maxHealth = newMax;
+        if (healToFull) currentHealth = maxHealth;
+        else currentHealth = Mathf.Min(currentHealth, maxHealth);
     }
 }
