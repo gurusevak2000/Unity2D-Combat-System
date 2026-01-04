@@ -27,17 +27,12 @@ public class Health : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        // Always play hit feedback
+        // Always play hit feedback (shake + sparks)
         animator.SetTrigger("Hit");
-
-        // Find camera once (modern + fast way)
         var camFollow = Object.FindFirstObjectByType<CameraFollowWithLookAhead>();
-
-        // Shake if we found it
         if (camFollow != null)
             camFollow.TriggerShake(0.15f, 0.5f);
 
-        // Sparks
         if (hitSparkPrefab != null)
         {
             GameObject sparks = Instantiate(hitSparkPrefab,
@@ -46,42 +41,45 @@ public class Health : MonoBehaviour
             Destroy(sparks, 0.5f);
         }
 
-#if ENABLE_CHEATS
-        // CHEAT: Infinite Health → ignore damage completely
-        if (CheatManager.Instance != null && CheatManager.Instance.InfiniteHealth)
+    #if ENABLE_CHEATS
+        // PLAYER-ONLY Infinite Health
+        if (CheatManager.Instance != null && CheatManager.Instance.PlayerInfiniteHealth && CompareTag("Player"))
         {
-            return; // Exit early — no damage applied
+            Debug.Log($"<color=cyan>🛡️ PLAYER GOD MODE: {gameObject.name} took 0 damage!</color>");
+            return; // Player invincible
         }
-#endif
+    #endif
 
-        // Normal damage (only runs if no infinite health cheat)
+        // Normal damage
         currentHealth -= damage;
-
         if (currentHealth <= 0)
-        {
-            if (gameObject.CompareTag("Enemy"))
-            {
-                var manager = FindFirstObjectByType<ProgressionManager>();  
-                if (manager != null)
-                {
-                    manager.AddXp(50);
-                }
-                else
-                {
-                    Debug.LogWarning("ProgressionManager not found in scene!");
-                }
-            }
-
             Die();
-        }
     }
 
     private void Die()
     {
-#if ENABLE_CHEATS
-        if (CheatManager.Instance != null && CheatManager.Instance.InfiniteHealth)
+    #if ENABLE_CHEATS
+        if (CheatManager.Instance != null && 
+            CheatManager.Instance.PlayerInfiniteHealth && 
+            CompareTag("Player")) // Only player gets god mode
+        {
             return;
-#endif
+        }
+    #endif
+
+        // === AWARD XP ONLY IF THIS IS AN ENEMY ===
+        if (CompareTag("Enemy"))
+        {
+            if (ProgressionManager.Instance != null)
+            {
+                ProgressionManager.Instance.AddXp(50); // Change 50 to whatever you want per enemy
+                Debug.Log($"<color=green>💀 Enemy died! Awarded 50 XP</color>");
+            }
+            else
+            {
+                Debug.LogError("ProgressionManager not found!");
+            }
+        }
 
         animator.SetTrigger("Die");
         Invoke(nameof(DestroySelf), deathDelay);

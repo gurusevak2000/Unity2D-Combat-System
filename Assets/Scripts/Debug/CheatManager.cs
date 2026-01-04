@@ -6,10 +6,10 @@ public class CheatManager : MonoBehaviour
     public static CheatManager Instance { get; private set; }
 
     [Header("Cheat Toggles (Inspector or Hotkeys)")]
-    [SerializeField] private bool infiniteHealth = false;
+    [SerializeField] private bool playerInfiniteHealth = false;
 
     [Header("Hotkeys")]
-    [SerializeField] private KeyCode toggleInfiniteHealthKey = KeyCode.I;
+    [SerializeField] private KeyCode togglePlayerHealthKey = KeyCode.I;
 
     private void Awake()
     {
@@ -21,17 +21,27 @@ public class CheatManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        
+        //Debug.Log("<color=cyan><b>🧙‍♂️ CHEAT MANAGER LOADED! Press I for PLAYER-ONLY God Mode</b></color>");
     }
 
     private void Update()
     {
-        if (Input.GetKeyDown(toggleInfiniteHealthKey))
+        if (Input.GetKeyDown(togglePlayerHealthKey))
         {
-            infiniteHealth = !infiniteHealth;
-            Debug.Log($"🛡️ Infinite Health: {(infiniteHealth ? "ON ✅" : "OFF ❌")}");
+            playerInfiniteHealth = !playerInfiniteHealth;
+            
+            // LOUD CONSOLE + On-Screen feedback
+            string status = playerInfiniteHealth ? "PLAYER GOD MODE ACTIVATED ✅" : "Player God Mode DEACTIVATED ❌";
+            //Debug.Log($"<color=red><b>🚀 {status}</b></color>");
+            //Debug.Log($"<color=green><b>Player Infinite Health: {playerInfiniteHealth}</b></color>");
         }
     }
 
-    public bool InfiniteHealth => infiniteHealth;
+    // PLAYER-ONLY check
+    public bool PlayerInfiniteHealth => playerInfiniteHealth;
+    
+    // Keep old name for backward compatibility (enemies ignore this)
+    public bool InfiniteHealth => false; // Always false for non-players
 }
 #endif

@@ -3,6 +3,17 @@ using UnityEngine.Events;
 
 public class ProgressionManager : MonoBehaviour
 {
+    #if UNITY_EDITOR
+        [ContextMenu("Debug: Print Current Progress")]
+    #endif
+    public void DebugProgress()
+    {
+        Debug.Log($"<color=cyan>🎮 CURRENT PROGRESS:</color>\n" +
+                $"Level: {currentPlayerLevel}\n" +
+                $"XP: {currentXp}\n" +
+                $"XP to next: {XpNeededForNextLevel()}\n" +
+                $"Portal ready? {currentPlayerLevel >= 3}");
+    }
     public static ProgressionManager Instance { get; private set; }
 
     [Header("Data")]
@@ -44,6 +55,7 @@ public class ProgressionManager : MonoBehaviour
             currentPlayerLevel = newLevel;
             onPlayerLevelUp?.Invoke(currentPlayerLevel);
         }
+        
     }
 
     public void AdvanceToNextWorld()

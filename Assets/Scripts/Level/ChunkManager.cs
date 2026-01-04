@@ -3,145 +3,169 @@ using UnityEngine;
 
 public class ChunkManager : MonoBehaviour
 {
-    [Header("Chunk Settings - World Level 1")]
-    [SerializeField] private List<LevelChunk> world1Chunks;
+    [Header("Level Progression")]
+    [SerializeField] private List<LevelData> levels = new List<LevelData>();
 
-    [Header("Chunk Settings - World Level 2")]
-    [SerializeField] private List<LevelChunk> world2Chunks;
+    private int currentLevelIndex = 0;
+    private int currentChunkIndex = 0;
 
-    // Add more world lists here as needed...
+    private LevelData CurrentLevel => 
+        (levels != null && currentLevelIndex < levels.Count && currentLevelIndex >= 0) 
+            ? levels[currentLevelIndex] 
+            : null;
 
-    private int currentWorldIndex = 0; // 0-based
-
-    private List<LevelChunk> CurrentChunkList
-    {
-        get
-        {
-            return currentWorldIndex switch
-            {
-                0 => world1Chunks,
-                1 => world2Chunks,
-                // Add more...
-                _ => world1Chunks // fallback to world 1
-            };
-        }
-    }
-
+    [Header("Spawning Settings")]
     [SerializeField] private Transform player;
     [SerializeField] private int initialChunks = 3;
-    [SerializeField] private int maxChunks = 5;
+    
+    // LOWER THIS! 3–4 is usually perfect for 2D platformers
+    [SerializeField] private int maxActiveChunks = 4;  
 
     [Header("Camera Settings")]
     [SerializeField] private Camera mainCamera;
-    [SerializeField] private float spawnBuffer = 5f;
+    [SerializeField] private float spawnBuffer = 8f;  // Increased a bit for safety
 
     private Queue<LevelChunk> activeChunks = new Queue<LevelChunk>();
     private Transform lastEndPoint;
 
     private void Start()
     {
-        if (mainCamera == null)
-            mainCamera = Camera.main;
+        if (mainCamera == null) mainCamera = Camera.main;
 
-        var currentList = CurrentChunkList;
-        if (currentList == null || currentList.Count == 0)
+        if (CurrentLevel == null || CurrentLevel.ChunkCount == 0)
         {
-            Debug.LogError($"ChunkManager: No chunks assigned for World Level {currentWorldIndex + 1}");
+            Debug.LogError($"No level data for Level {currentLevelIndex + 1}");
             return;
         }
 
+        ResetChunkProgress();
         SpawnInitialChunks();
     }
 
     private void Update()
     {
-        if (mainCamera == null || lastEndPoint == null) return;
+        if (mainCamera == null || lastEndPoint == null || CurrentLevel == null) return;
 
         float cameraRightEdge = mainCamera.transform.position.x +
                                 mainCamera.orthographicSize * mainCamera.aspect;
 
+        // Spawn next chunk when needed
         if (cameraRightEdge + spawnBuffer >= lastEndPoint.position.x)
         {
-            SpawnChunk();
+            SpawnNextChunkInSequence();
         }
+
+        // EXTRA SAFETY: Distance-based cleanup (in case queue fails)
+        CleanUpFarChunks();
     }
 
     private void SpawnInitialChunks()
     {
-        for (int i = 0; i < initialChunks; i++)
+        for (int i = 0; i < initialChunks && currentChunkIndex < CurrentLevel.ChunkCount; i++)
         {
-            SpawnChunk();
+            SpawnNextChunkInSequence();
         }
     }
 
-    private void SpawnChunk()
+    private void SpawnNextChunkInSequence()
     {
-        var currentList = CurrentChunkList;
-        if (currentList == null || currentList.Count == 0)
+        if (currentChunkIndex >= CurrentLevel.ChunkCount)
         {
-            Debug.LogError("ChunkManager: Current chunk list is empty or null!");
+            // Optional: Loop level or stop spawning
+            // Debug.Log("End of level reached!");
             return;
         }
 
-        LevelChunk prefab = currentList[Random.Range(0, currentList.Count)];
+        LevelChunk prefab = CurrentLevel.GetChunkAt(currentChunkIndex);
         if (prefab == null)
         {
-            Debug.LogError("ChunkManager: A chunk prefab in the list is null!");
+            Debug.LogError($"Null chunk at index {currentChunkIndex}!");
+            currentChunkIndex++;
             return;
         }
 
-        LevelChunk newChunk;
+        Vector3 spawnPos = lastEndPoint == null 
+            ? Vector3.zero 
+            : lastEndPoint.position - prefab.startPoint.localPosition;
 
-        if (lastEndPoint == null)
-        {
-            newChunk = Instantiate(prefab, Vector3.zero, Quaternion.identity);
-        }
-        else
-        {
-            Vector3 spawnPos = lastEndPoint.position - prefab.startPoint.localPosition;
-            newChunk = Instantiate(prefab, spawnPos, Quaternion.identity);
-        }
-
+        LevelChunk newChunk = Instantiate(prefab, spawnPos, Quaternion.identity);
         lastEndPoint = newChunk.endPoint;
         activeChunks.Enqueue(newChunk);
 
-        if (activeChunks.Count > maxChunks)
+        currentChunkIndex++;
+
+        // CRITICAL: Remove old chunks when limit exceeded
+        while (activeChunks.Count > maxActiveChunks)
         {
-            var oldChunk = activeChunks.Dequeue();
+            LevelChunk oldChunk = activeChunks.Dequeue();
             if (oldChunk != null)
+            {
                 Destroy(oldChunk.gameObject);
+            }
+        }
+    }
+
+    // Extra safety net: destroy chunks far behind the player
+    private void CleanUpFarChunks()
+    {
+        if (player == null) return;
+
+        float destroyThreshold = player.position.x - 50f; // Destroy anything 50 units behind player
+
+        while (activeChunks.Count > 0)
+        {
+            LevelChunk oldest = activeChunks.Peek();
+            if (oldest.transform.position.x + 20f < destroyThreshold) // +20f buffer for chunk width
+            {
+                activeChunks.Dequeue();
+                Destroy(oldest.gameObject);
+            }
+            else
+            {
+                break; // Since queue is in order, no need to check further
+            }
         }
     }
 
     public void SwitchToWorldLevel(int newWorldLevel) // 1-based
     {
         int newIndex = newWorldLevel - 1;
-
-        List<LevelChunk> targetList = newIndex switch
+        if (newIndex < 0 || newIndex >= levels.Count)
         {
-            0 => world1Chunks,
-            1 => world2Chunks,
-            // Add more cases here if needed
-            _ => null
-        };
-
-        if (targetList == null || targetList.Count == 0)
-        {
-            Debug.LogError($"World Level {newWorldLevel} has no chunk prefabs assigned or invalid index!");
+            Debug.LogError($"Invalid level {newWorldLevel}");
             return;
         }
 
-        // Clear old chunks
+        // FULL CLEANUP — destroy everything old
         while (activeChunks.Count > 0)
         {
             var chunk = activeChunks.Dequeue();
-            if (chunk != null)
-                Destroy(chunk.gameObject);
+            if (chunk != null) Destroy(chunk.gameObject);
         }
 
-        lastEndPoint = null;
-        currentWorldIndex = newIndex;
-
+        currentLevelIndex = newIndex;
+        ResetChunkProgress();
         SpawnInitialChunks();
+
+        Debug.Log($"Switched to Level {newWorldLevel}");
     }
-}
+
+    private void ResetChunkProgress()
+    {
+        currentChunkIndex = 0;
+        lastEndPoint = null;
+        // activeChunks.Clear(); → already cleared in SwitchToWorldLevel
+    }
+
+#if UNITY_EDITOR
+    [ContextMenu("Force Cleanup All Chunks")]
+    private void EditorForceCleanup()
+    {
+        while (activeChunks.Count > 0)
+        {
+            var c = activeChunks.Dequeue();
+            if (c != null) DestroyImmediate(c.gameObject);
+        }
+    }
+#endif
+}   

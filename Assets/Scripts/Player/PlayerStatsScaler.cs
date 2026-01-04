@@ -16,18 +16,8 @@ public class PlayerStatsScaler : MonoBehaviour
 
     private void OnEnable()
     {
-        // Safely subscribe — in case ProgressionManager isn't ready yet
-        if (ProgressionManager.Instance != null)
-        {
-            ProgressionManager.Instance.onPlayerLevelUp.AddListener(ApplyStats);
-            // Important: Apply stats immediately using current level
-            ApplyStats(ProgressionManager.Instance.currentPlayerLevel);
-        }
-        else
-        {
-            // Try again soon if manager not ready (e.g., execution order issue)
-            Invoke(nameof(TrySubscribe), 0.1f);
-        }
+        // Try immediately
+        TrySubscribe();
     }
 
     private void TrySubscribe()
@@ -39,7 +29,8 @@ public class PlayerStatsScaler : MonoBehaviour
         }
         else
         {
-            Debug.LogError("ProgressionManager not found! Make sure there's a GameObject with ProgressionManager in the scene.");
+            // Retry after a brief delay — gives ProgressionManager time to awaken
+            Invoke(nameof(TrySubscribe), 0.2f);
         }
     }
 
