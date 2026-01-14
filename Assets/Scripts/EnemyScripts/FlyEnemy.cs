@@ -1,4 +1,3 @@
-// FlyEnemy.cs - COMPLETE REPLACEMENT with both attacks working perfectly
 using UnityEngine;
 
 public class FlyEnemy : BaseCharacter
@@ -104,6 +103,7 @@ public class FlyEnemy : BaseCharacter
         if (ep != null)
             ep.Initialize(shootDir);
 
+        //Debug.Log("🟢 SHOOTING PROJECTILE! Distance: " + Vector2.Distance(transform.position, player.position));
         lastShootTime = Time.time;
         animator.SetTrigger("Shoot");
     }
