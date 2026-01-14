@@ -51,11 +51,12 @@
     <Compile Include="Assets\Scripts\UI\CoinUI.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerScript.cs" />
     <Compile Include="Assets\Scripts\Inventory\PlayerInventory.cs" />
-    <Compile Include="Assets\Scripts\Inventory\Item.cs" />
+    <Compile Include="Assets\Scripts\Inventory\Items\Item.cs" />
     <Compile Include="Assets\Scripts\Level\ChunkManager.cs" />
     <Compile Include="Assets\Scripts\EnemyScripts\EnemyCombat.cs" />
     <Compile Include="Assets\Scripts\Debug\CheatManager.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerCombat.cs" />
+    <Compile Include="Assets\Scripts\Inventory\ItemPickup.cs" />
     <Compile Include="Assets\Scripts\EnemyScripts\FlyEnemy.cs" />
     <Compile Include="Assets\Scripts\EnemyScripts\EnemyProjectile.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerStatsScaler.cs" />
