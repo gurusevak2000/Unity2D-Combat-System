@@ -1,4 +1,7 @@
 ﻿<Solution>
   <Project Path="Unity.Cursor.Editor.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="Assembly-CSharp-firstpass.csproj" />
+  <Project Path="Nobi.UiRoundedCorners.Editor.csproj" />
+  <Project Path="Nobi.UiRoundedCorners.csproj" />
 </Solution>

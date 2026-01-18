@@ -45,7 +45,7 @@ public class PlayerInventory : MonoBehaviour
                 slot.currentCount += willAdd;
                 count -= willAdd;
 
-                Debug.Log($"Added to existing stack: {willAdd}× {item.itemName}");
+                //Debug.Log($"Added to existing stack: {willAdd}× {item.itemName}");
 
                 if (count <= 0) return true;
             }
@@ -61,6 +61,19 @@ public class PlayerInventory : MonoBehaviour
         }
 
         return true;
+    }
+
+    public List<InventorySlot> GetAllSlots() => slots;
+    public void UseItem(int slotIndex)
+    {
+        if (slotIndex < slots.Count && slots[slotIndex].currentCount > 0)
+        {
+            slots[slotIndex].currentCount--;
+            if (slots[slotIndex].currentCount <= 0)
+                slots.RemoveAt(slotIndex);
+            
+            Debug.Log($"<color=yellow>Used item from slot {slotIndex}</color>");
+        }
     }
 
     public void AddCoins(int amount)
