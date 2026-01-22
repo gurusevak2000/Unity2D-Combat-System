@@ -9,6 +9,7 @@ public class PauseMenu : MonoBehaviour
     [SerializeField] private GameObject inventoryPanel;
     [SerializeField] private InventoryPanelUI inventoryPanelUI;
     [SerializeField] private AudioClip buttonSound;
+    [SerializeField] private GameObject[] alwaysHideWhenNotPaused;
 
     private bool isPaused = false;
 
@@ -16,6 +17,10 @@ public class PauseMenu : MonoBehaviour
     {
         pausePanel.SetActive(false);
         inventoryPanel.SetActive(false);
+
+        foreach (var decor in alwaysHideWhenNotPaused)
+        if (decor != null)
+            decor.SetActive(false);
     }
 
     private void Update()
@@ -30,6 +35,16 @@ public class PauseMenu : MonoBehaviour
         pausePanel.SetActive(isPaused);
         inventoryPanel.SetActive(false);
 
+        // This is the important part — hide/show every time we toggle
+        if (alwaysHideWhenNotPaused != null)
+        {
+            foreach (var decor in alwaysHideWhenNotPaused)
+            {
+                if (decor != null) // safety check
+                    decor.SetActive(isPaused);
+            }
+        }
+
         Time.timeScale = isPaused ? 0f : 1f;
         Cursor.visible = isPaused;
         Cursor.lockState = isPaused ? CursorLockMode.None : CursorLockMode.Locked;
@@ -43,8 +58,13 @@ public class PauseMenu : MonoBehaviour
     {
         PlaySound();
         inventoryPanel.SetActive(true);
-        inventoryPanelUI.RefreshInventory();
         pausePanel.SetActive(false);
+
+        var invUI = inventoryPanel.GetComponent<InventoryPanelUI>();
+        if (invUI != null)
+            invUI.RefreshInventory();
+        else
+            Debug.LogError("No InventoryUI component found on InventoryPanel!");
     }
 
     public void SaveGame()

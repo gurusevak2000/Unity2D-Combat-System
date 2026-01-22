@@ -1,13 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro; // If using TextMeshPro
+using TMPro;
 
 public class ProgressionUI : MonoBehaviour
 {
     [Header("UI References")]
     [SerializeField] private TextMeshProUGUI levelText;   // Or legacy Text
     [SerializeField] private Slider xpSlider;
-    [SerializeField] private TextMeshProUGUI xpText;     // Optional: "150 / 300"
+    [SerializeField] private TextMeshProUGUI xpText;     
 
     private LevelingData levelingData; // Cache for calculations
 
@@ -15,10 +15,10 @@ public class ProgressionUI : MonoBehaviour
     {
         if (ProgressionManager.Instance != null)
         {
-            ProgressionManager.Instance.onPlayerLevelUp.AddListener(UpdateUI);
-            ProgressionManager.Instance.onXpGained.AddListener(UpdateUI);
+            ProgressionManager.Instance.onPlayerLevelUp.AddListener(UpdateUI_WithAmount);
+            ProgressionManager.Instance.onXpGained.AddListener(UpdateUI_WithAmount);
             levelingData = ProgressionManager.Instance.GetComponent<ProgressionManager>().levelingData; // Or expose publicly
-            UpdateUI(0); // Initial update
+            UpdateUI(); // Initial update
         }
     }
 
@@ -26,12 +26,12 @@ public class ProgressionUI : MonoBehaviour
     {
         if (ProgressionManager.Instance != null)
         {
-            ProgressionManager.Instance.onPlayerLevelUp.RemoveListener(UpdateUI);
-            ProgressionManager.Instance.onXpGained.RemoveListener(UpdateUI);
+            ProgressionManager.Instance.onPlayerLevelUp.RemoveListener(UpdateUI_WithAmount);
+            ProgressionManager.Instance.onXpGained.RemoveListener(UpdateUI_WithAmount);
         }
     }
 
-    private void UpdateUI(int amount = 0)
+    public void UpdateUI_WithAmount(int amount)
     {
         int level = ProgressionManager.Instance.currentPlayerLevel;
         int currentXp = ProgressionManager.Instance.currentXp;
@@ -56,5 +56,10 @@ public class ProgressionUI : MonoBehaviour
         // Optional detailed text
         if (xpText != null)
             xpText.text = $"{xpIntoCurrentLevel} / {xpNeededForNext} XP";
+    }
+
+    public void UpdateUI()
+    {
+        UpdateUI_WithAmount(0);           // calls the version below
     }
 }

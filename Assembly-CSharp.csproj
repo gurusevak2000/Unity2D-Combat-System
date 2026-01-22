@@ -55,6 +55,7 @@
     <Compile Include="Assets\Scripts\Inventory\Items\Item.cs" />
     <Compile Include="Assets\Scripts\UI\InventoryPanelUI.cs" />
     <Compile Include="Assets\Scripts\Level\ChunkManager.cs" />
+    <Compile Include="Assets\Scripts\UI\ProgressionUI.cs" />
     <Compile Include="Assets\Scripts\UI\InventorySlotUI.cs" />
     <Compile Include="Assets\Scripts\EnemyScripts\EnemyCombat.cs" />
     <Compile Include="Assets\Scripts\Debug\CheatManager.cs" />
@@ -72,7 +73,6 @@
     <Compile Include="Assets\Scripts\CoinPickup.cs" />
     <Compile Include="Assets\Scripts\Universal Scripts\HealthBarUI.cs" />
     <Compile Include="Assets\Scripts\UI\HeartHealthUI.cs" />
-    <Compile Include="Assets\Scripts\ProgressionUI.cs" />
     <Compile Include="Assets\Scripts\Portal.cs" />
     <Compile Include="Assets\Scripts\Progression\ProgressionManager.cs" />
     <Compile Include="Assets\Scripts\EnemyScripts\EnemyAnimationEvents.cs" />
