@@ -1,6 +1,6 @@
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.SceneManagement;
-
 
 public class Health : MonoBehaviour
 {
@@ -13,7 +13,7 @@ public class Health : MonoBehaviour
 
     [Header("Death Settings")]
     public float deathDelay = 1f;
-
+    public UnityEvent OnDeath = new UnityEvent();
     [Header("VFX")]
     [SerializeField] private GameObject hitSparkPrefab;
 
@@ -59,32 +59,32 @@ public class Health : MonoBehaviour
     private void Die()
     {
     #if ENABLE_CHEATS
-        if (CheatManager.Instance != null && 
-            CheatManager.Instance.PlayerInfiniteHealth && 
-            CompareTag("Player")) // Only player gets god mode
-        {
+        if (CompareTag("Player") && CheatManager.Instance != null && CheatManager.Instance.PlayerInfiniteHealth)
             return;
-        }
     #endif
 
-        // === AWARD XP ONLY IF THIS IS AN ENEMY ===
+        // Decide XP reward
+        int xpReward = 0;
+
         if (CompareTag("Enemy"))
+            xpReward = 50;
+        else if (CompareTag("BossEnemy"))
+            xpReward = 500;           // or 1000, 2000, whatever makes sense
+
+        if (xpReward > 0 && ProgressionManager.Instance != null)
         {
-            if (ProgressionManager.Instance != null)
-            {
-                ProgressionManager.Instance.AddXp(50); // Change 50 to whatever you want per enemy
-                Debug.Log($"<color=green>💀 Enemy died! Awarded 50 XP</color>");
-            }
-            else
-            {
-                Debug.LogError("ProgressionManager not found!");
-            }
+            ProgressionManager.Instance.AddXp(xpReward);
+            string type = CompareTag("BossEnemy") ? "Boss" : "Enemy";
+            Debug.Log($"<color=green>💀 {type} died → +{xpReward} XP</color>");
         }
 
-        animator.SetTrigger("Die");
+        OnDeath?.Invoke();
+
+        if (animator != null)
+            animator.SetTrigger("Die");
+
         Invoke(nameof(DestroySelf), deathDelay);
     }
-
     private void DestroySelf()
     {
         Destroy(gameObject);
