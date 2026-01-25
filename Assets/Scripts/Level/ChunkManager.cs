@@ -24,6 +24,9 @@ public class ChunkManager : MonoBehaviour
     [Header("Camera Settings")]
     [SerializeField] private Camera mainCamera;
     [SerializeField] private float spawnBuffer = 8f;  // Increased a bit for safety
+    private float levelLeftBoundary = float.MinValue;
+    [Header("Camera Integration")]
+    [SerializeField] private CameraFollowWithLookAhead cameraFollow;
 
     private Queue<LevelChunk> activeChunks = new Queue<LevelChunk>();
     private Transform lastEndPoint;
@@ -37,6 +40,11 @@ public class ChunkManager : MonoBehaviour
             Debug.LogError($"No level data for Level {currentLevelIndex + 1}");
             return;
         }
+        if (cameraFollow == null)
+        cameraFollow = FindFirstObjectByType<CameraFollowWithLookAhead>();
+        
+        // Set initial right bound
+        UpdateCameraRightBound();
 
         ResetChunkProgress();
         SpawnInitialChunks();
@@ -64,6 +72,13 @@ public class ChunkManager : MonoBehaviour
         for (int i = 0; i < initialChunks && currentChunkIndex < CurrentLevel.ChunkCount; i++)
         {
             SpawnNextChunkInSequence();
+            
+            // After spawning first chunk → remember left edge
+            if (i == 0 && lastEndPoint != null)
+            {
+                // assuming startPoint is roughly the left side
+                levelLeftBoundary = transform.position.x - 2f;   // tune offset
+            }
         }
     }
 
@@ -93,6 +108,7 @@ public class ChunkManager : MonoBehaviour
         activeChunks.Enqueue(newChunk);
 
         currentChunkIndex++;
+        UpdateCameraRightBound();
 
         // CRITICAL: Remove old chunks when limit exceeded
         while (activeChunks.Count > maxActiveChunks)
@@ -155,6 +171,17 @@ public class ChunkManager : MonoBehaviour
         currentChunkIndex = 0;
         lastEndPoint = null;
         // activeChunks.Clear(); → already cleared in SwitchToWorldLevel
+    }
+    private void UpdateCameraRightBound()
+    {
+        if (cameraFollow != null && lastEndPoint != null)
+        {
+            // Extend right boundary 20 units past current end point
+            float newRightBound = lastEndPoint.position.x;
+            cameraFollow.UpdateMaxCameraX(newRightBound);
+            
+            Debug.Log($"📹 Camera right bound extended to: {newRightBound:F1}");
+        }
     }
 
 #if UNITY_EDITOR

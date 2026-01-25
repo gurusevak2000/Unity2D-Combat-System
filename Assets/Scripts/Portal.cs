@@ -69,29 +69,81 @@ public class Portal : MonoBehaviour
 
         playerCollider = other;
         state = PortalState.Closing;
+
+        // ────────────────────────────────
+        //  Make player disappear immediately
+        // ────────────────────────────────
+        SpriteRenderer playerSprite = other.GetComponentInChildren<SpriteRenderer>();
+        if (playerSprite != null)
+        {
+            playerSprite.enabled = false;           // Option 1: completely hide (recommended)
+            // playerSprite.color = new Color(1,1,1,0);  // Option 2: just make transparent
+        }
+
+        // Optional: prevent player movement / physics during transition
+        Rigidbody2D rb = other.GetComponent<Rigidbody2D>();
+        if (rb != null) rb.simulated = false;
+
+        // If your player has a movement script with EnableMovement method:
+        // PlayerScript player = other.GetComponent<PlayerScript>();
+        // if (player != null) player.EnableMovement(false);
+
         portalAnimator.SetTrigger("Close");
 
-        // Wait for Close anim → Load Level (YOUR OLD LOGIC)
         Invoke(nameof(LoadNextLevel), closeDuration);
     }
 
     private void LoadNextLevel()
     {
-        // YOUR EXACT OLD CODE
         if (ProgressionManager.Instance.currentPlayerLevel >= requiredPlayerLevel)
         {
+            // 1. Advance world (your old code)
             ProgressionManager.Instance.AdvanceToNextWorld();
+
+            // 2. Teleport player **before** switching chunks
+            if (playerSpawnPoint != null && playerCollider != null)
+            {
+                playerCollider.transform.position = playerSpawnPoint.position;
+            }
+
+            // 3. Switch chunks / load new world
             FindFirstObjectByType<ChunkManager>().SwitchToWorldLevel(ProgressionManager.Instance.currentWorldLevel);
 
-            if (playerSpawnPoint != null)
-                playerCollider.transform.position = playerSpawnPoint.position;
+            // 4. Show player again
+            if (playerCollider != null)
+            {
+                SpriteRenderer playerSprite = playerCollider.GetComponentInChildren<SpriteRenderer>();
+                if (playerSprite != null)
+                {
+                    playerSprite.enabled = true;           // show again
+                    // playerSprite.color = new Color(1,1,1,1); // if you used alpha fade
+                }
+
+                Rigidbody2D rb = playerCollider.GetComponent<Rigidbody2D>();
+                if (rb != null) rb.simulated = true;
+
+                // If you disabled movement:
+                // PlayerScript player = playerCollider.GetComponent<PlayerScript>();
+                // if (player != null) player.EnableMovement(true);
+            }
 
             Destroy(gameObject);
         }
         else
         {
             Debug.LogWarning($"Need Level {requiredPlayerLevel}!");
-            state = PortalState.Idle; // Back to idle
+
+            // Important: show player again if portal didn't work
+            if (playerCollider != null)
+            {
+                SpriteRenderer playerSprite = playerCollider.GetComponentInChildren<SpriteRenderer>();
+                if (playerSprite != null)
+                {
+                    playerSprite.enabled = true;
+                }
+            }
+
+            state = PortalState.Idle;
         }
     }
 }

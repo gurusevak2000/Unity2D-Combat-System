@@ -12,5 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d32541a4bd8f60e429a754d8bd0340a7, type: 3}
   m_Name: LevelData_2
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
-  chunksInOrder: []
+  chunksInOrder:
+  - {fileID: 7516090734700568012, guid: e30d13916c4116b4087588baa8e05b7d, type: 3}
+  - {fileID: 7516090734700568012, guid: 71344cc8efccf274a89b16ac79ff80d3, type: 3}
+  - {fileID: 7516090734700568012, guid: cff969cd711841047a5528ae954d58d5, type: 3}
+  - {fileID: 7516090734700568012, guid: c77439fd63a13c5498bccc70ba2da3f6, type: 3}
   levelName: Dark_Night_Forest

@@ -3,6 +3,7 @@ using UnityEngine;
 public class PlayerScript : BaseCharacter
 {
     [SerializeField] private float jumpForce = 10f;
+    private const float MIN_PLAYER_X = -8f;  // Adjust this value as needed
 
     private float xInput;  // Keeps track of horizontal input
 
@@ -40,7 +41,17 @@ public class PlayerScript : BaseCharacter
     {
         if (canMove)
         {
-            rb.linearVelocity = new Vector2(xInput * speed, rb.linearVelocity.y);
+            const float MIN_PLAYER_X = -25f;  // Slightly INSIDE camera left edge
+            
+            float targetVelocityX = xInput * speed;
+            
+            // BLOCK moving left off screen
+            if (transform.position.x <= MIN_PLAYER_X && xInput < 0)
+            {
+                targetVelocityX = 0;
+            }
+            
+            rb.linearVelocity = new Vector2(targetVelocityX, rb.linearVelocity.y);
         }
     }
 
