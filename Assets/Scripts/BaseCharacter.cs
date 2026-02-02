@@ -38,23 +38,39 @@ public abstract class BaseCharacter : MonoBehaviour
     {
         if (isKnocked) return;
 
+        //Debug.Log("ApplyKnockback called - starting knockback");  // ← debug
+
         isKnocked = true;
+        canMove = false;                      // force lock
         rb.linearVelocity = Vector2.zero;
         rb.AddForce(dir.normalized * knockbackForce, ForceMode2D.Impulse);
-        Invoke(nameof(EndKnockback), 0.2f);
+
+        CancelInvoke(nameof(EndKnockback));   // safety
+        Invoke(nameof(EndKnockback), 0.10f);   // longer = 0.6 seconds
     }
 
     protected void EndKnockback()
     {
+        //Debug.Log("EndKnockback called");     // ← must see this after ~0.6s
         isKnocked = false;
+        canMove = true;
     }
 
     public bool IsKnocked => isKnocked;
 
     protected virtual void Update()
     {
-        if (!isKnocked)
+        if (isKnocked)
         {
+            canMove = false;  // force every frame during knockback
+            HandleGroundCheckCollions();
+            HandleAnimation();
+            HandleFlip();
+        }
+        else
+        {
+            // Optional: unlock if stuck (safety net)
+            //if (!canMove) canMove = true;
             HandleMovement();
             HandleAnimation();
             HandleGroundCheckCollions();
@@ -66,10 +82,20 @@ public abstract class BaseCharacter : MonoBehaviour
     protected virtual void HandleMovement() { }
     protected virtual void HandleAnimation()
     {
+        // During knockback or hit state → freeze xVelocity parameter so blend tree doesn't fight
+        if (isKnocked || 
+            animator.GetCurrentAnimatorStateInfo(0).IsName("PlayerHit") ||
+            animator.GetCurrentAnimatorStateInfo(0).IsName("Die"))
+        {
+            animator.SetFloat("xVelocity", 0f);     // freeze blend tree
+            animator.SetBool("IsGrounded", IsGrounded);
+            return;
+        }
+
+        // Normal case
         animator.SetFloat("xVelocity", Mathf.Abs(rb.linearVelocity.x));
         animator.SetBool("IsGrounded", IsGrounded);
     }
-
     protected virtual void HandleGroundCheckCollions()
     {
         IsGrounded = Physics2D.Raycast(transform.position, Vector2.down, groundCheckDistance, whatIsGround);
@@ -77,6 +103,13 @@ public abstract class BaseCharacter : MonoBehaviour
 
     protected virtual void HandleFlip()
     {
+        // Do NOT flip during knockback or while any hit/death animation is playing
+        if (isKnocked) return;
+
+        if (animator.GetCurrentAnimatorStateInfo(0).IsName("PlayerHit") ||
+            animator.GetCurrentAnimatorStateInfo(0).IsName("Die"))
+            return;
+
         if (Mathf.Abs(rb.linearVelocity.x) < flipDeadZone) return;
 
         if (rb.linearVelocity.x > 0 && !facingRight)

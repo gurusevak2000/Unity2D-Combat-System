@@ -14,12 +14,12 @@ public class CameraFollowWithLookAhead : MonoBehaviour
     [SerializeField] private float lookAheadDistance = 3f;
     [SerializeField] private float lookAheadSmoothTime = 0.1f;
 
-    [Header("🛑 CAMERA BOUNDS")]
+    [Header("CAMERA BOUNDS")]
     [SerializeField] private float minCameraX = -8f;  // ← LEFT WALL POSITION
     [SerializeField] private float maxCameraX = 300f; // ← DYNAMIC RIGHT (chunks)
 
-    [Header("SCREEN SHAKE! 🔥")]
-    [SerializeField] private float shakeMagnitude = 0.3f;
+    [Header("SCREEN SHAKE! ")]
+    [SerializeField] private float shakeMagnitude;
 
     // Shake variables
     private Vector3 originalPos;
@@ -56,7 +56,7 @@ public class CameraFollowWithLookAhead : MonoBehaviour
             transform.position.z
         );
 
-        // 🔥 CRITICAL: CLAMP CAMERA POSITION
+        //CRITICAL: CLAMP CAMERA POSITION
         float halfWidth = Camera.main.orthographicSize * Camera.main.aspect;
         targetPosition.x = Mathf.Clamp(targetPosition.x, 
             minCameraX + halfWidth,      // Left edge + camera width
@@ -90,10 +90,15 @@ public class CameraFollowWithLookAhead : MonoBehaviour
         }
     }
 
-    public void TriggerShake(float duration, float magnitude)
+    public void TriggerShake(float duration, float? forcedMagnitude = null)
     {
         currentShakeTime = duration;
-        shakeMagnitude = magnitude;
+        
+        if (forcedMagnitude.HasValue)
+        {
+            shakeMagnitude = forcedMagnitude.Value;
+        }
+        
     }
 
     // Visual bounds in Scene view

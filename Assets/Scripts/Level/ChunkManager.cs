@@ -180,7 +180,7 @@ public class ChunkManager : MonoBehaviour
             float newRightBound = lastEndPoint.position.x;
             cameraFollow.UpdateMaxCameraX(newRightBound);
             
-            Debug.Log($"📹 Camera right bound extended to: {newRightBound:F1}");
+            //Debug.Log($"📹 Camera right bound extended to: {newRightBound:F1}");
         }
     }
 

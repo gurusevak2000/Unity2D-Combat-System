@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class PlayerCombat : BaseCharacter
@@ -8,23 +9,27 @@ public class PlayerCombat : BaseCharacter
     [SerializeField] private float attackCooldown = 0.5f;
     [SerializeField] private LayerMask enemyLayer;
 
+    [Header("Dash Attack")]
+    [SerializeField] private float dashAttackDamageMultiplier = 2f;   // 2× damage
+    [SerializeField] private float dashAttackKnockbackMultiplier = 1.5f;
+
     private bool isAttacking;
     private float lastAttackTime;
 
-    private PlayerScript playerScript;  // NEW: reference to PlayerScript
+    private PlayerScript playerScript;
 
     protected override void Awake()
     {
         base.Awake();
-        playerScript = GetComponent<PlayerScript>();  // NEW: get the PlayerScript component
+        playerScript = GetComponent<PlayerScript>();
     }
 
     protected override void Update()
     {
-        /* base.Update(); */ // Calls HandleMovement and HandleAnimation from BaseCharacter
-
         if (Input.GetKeyDown(KeyCode.W) && CanAttack())
+        {
             StartAttack();
+        }
     }
 
     private bool CanAttack()
@@ -34,15 +39,61 @@ public class PlayerCombat : BaseCharacter
 
     private void StartAttack()
     {
+        if (isAttacking) return;
+
         isAttacking = true;
         lastAttackTime = Time.time;
-        rb.linearVelocity = Vector2.zero;
-        animator.SetTrigger("Attack");
+
+        // Brief stop for wind-up
+        rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
+        if (playerScript != null)
+            playerScript.EnableMovement(false);
+
+        // ────────────────────────────────────────────────
+        // DECIDE: normal attack OR dash attack?
+        // ────────────────────────────────────────────────
+        bool isDashAttack = playerScript != null && playerScript.isDashing;
+
+        if (isDashAttack)
+        {
+            animator.SetTrigger("DashAttack");     // Dash attack animation
+            // Optional: shorter cooldown during dash
+            lastAttackTime = Time.time - attackCooldown * 0.4f;
+        }
+        else
+        {
+            animator.SetTrigger("Attack");         // Normal attack
+        }
+
+        CancelInvoke(nameof(ForceEndAttack));
+        Invoke(nameof(ForceEndAttack), 2f);
     }
 
-    // Animation Event
+    private void ForceEndAttack()
+    {
+        if (isAttacking)
+        {
+            isAttacking = false;
+            if (playerScript != null)
+                playerScript.EnableMovement(true);
+        }
+    }
+
+    public void EndAttack()
+    {
+        CancelInvoke(nameof(ForceEndAttack));
+        isAttacking = false;
+        if (playerScript != null)
+            playerScript.EnableMovement(true);
+    }
+
     public void PerformAttack()
     {
+        bool isDashAttack = playerScript != null && playerScript.isDashing;
+
+        float damage = isDashAttack ? 1 * dashAttackDamageMultiplier : 1;
+        float knockbackMult = isDashAttack ? dashAttackKnockbackMultiplier : 1f;
+
         Collider2D[] hits = Physics2D.OverlapCircleAll(
             attackPoint.position,
             attackRadius,
@@ -54,38 +105,19 @@ public class PlayerCombat : BaseCharacter
             Health enemyHealth = hit.GetComponent<Health>();
             if (enemyHealth == null) continue;
 
-            enemyHealth.TakeDamage(1);
+            enemyHealth.TakeDamage(Mathf.RoundToInt(damage));
 
             Vector2 dir = (hit.transform.position - transform.position).normalized;
-            hit.GetComponent<BaseCharacter>()?.ApplyKnockback(dir);
+            hit.GetComponent<BaseCharacter>()?.ApplyKnockback(dir * knockbackMult);
         }
     }
 
-    // Animation Event
-    public void EndAttack()
+#if UNITY_EDITOR
+    public void DrawAttackGizmos()
     {
-        isAttacking = false;
+        if (attackPoint == null) return;
+        Gizmos.color = new Color(1f, 0.5f, 0f, 0.8f);
+        Gizmos.DrawWireSphere(attackPoint.position, attackRadius);
     }
-
-    // NEW: These two methods are called from Player_KaAnimationEvents
-    public void DisableMovementAndJump()
-    {
-        playerScript.EnableMovement(false);  // Changed to match the actual method name
-    }
-
-    public void EnableMovementAndJump()
-    {
-        playerScript.EnableMovement(true);   // Changed to match the actual method name
-    }
-
-    // Draw Gizmo for attack range
-    #if UNITY_EDITOR  // Only compiles in Editor — zero runtime cost
-        public void DrawAttackGizmos()
-        {
-            if (attackPoint == null) return;
-            Gizmos.color = new Color(1f, 0.5f, 0f, 0.8f);
-            Gizmos.DrawWireSphere(attackPoint.position, attackRadius);
-            Gizmos.DrawLine(transform.position, attackPoint.position);
-        }
-    #endif
+#endif
 }

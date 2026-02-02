@@ -2,31 +2,36 @@ using UnityEngine;
 
 public class Player_KaAnimationEvents : MonoBehaviour
 {
-    private PlayerCombat playerCombat;  // CHANGED: now gets PlayerCombat, not PlayerScript
-    
-    public void Awake()
+    private PlayerCombat playerCombat;
+    private PlayerScript playerScript;
+
+    void Start()
     {
         playerCombat = GetComponentInParent<PlayerCombat>();
+        playerScript  = GetComponentInParent<PlayerScript>();
+
+        if (playerCombat == null)  Debug.LogError("PlayerCombat not found!", this);
+        if (playerScript == null)  Debug.LogError("PlayerScript not found!", this);
     }
 
-    public void TriggerAttackDamage()
+    // Only keep what's actually used
+    public void TriggerAttackDamage() => playerCombat?.PerformAttack();
+    public void EndAttack()           => playerCombat?.EndAttack();
+
+    // Hit events (keep these for later hit animation lock)
+    public void LockMovementDuringHit()
     {
-        playerCombat.PerformAttack();
+        if (playerScript != null)
+            playerScript.EnableMovement(false);
+        else
+            Debug.LogWarning("PlayerScript null in Lock event!", this);
     }
 
-    // Animation Event
-    public void EndAttack()
+    public void UnlockMovementAfterHit()
     {
-        playerCombat.EndAttack();
-    }
-
-    public void DisableMovementAndJump()
-    {
-        playerCombat.DisableMovementAndJump();  // Calls the new method in PlayerCombat
-    }
-
-    public void EnableMovementAndJump()
-    {
-        playerCombat.EnableMovementAndJump();   // Calls the new method in PlayerCombat
+        if (playerScript != null)
+            playerScript.EnableMovement(true);
+        else
+            Debug.LogWarning("PlayerScript null in Unlock event!", this);
     }
 }

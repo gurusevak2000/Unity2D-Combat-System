@@ -40,7 +40,7 @@ public class ItemPickup : MonoBehaviour
         if (success)
         {
             // Optional: sound, particles, animation...
-            Debug.Log($"Picked up {amount}× {item.itemName}");
+            //Debug.Log($"Picked up {amount}× {item.itemName}");
             Destroy(gameObject);
         }
     }

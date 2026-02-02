@@ -1,4 +1,4 @@
 repository "My2d/My2d@13469259638445@cloud"
   path "/"
-    br "/main"
-    co "/main"
+    smartbranch "/main" changeset "10"    
+     

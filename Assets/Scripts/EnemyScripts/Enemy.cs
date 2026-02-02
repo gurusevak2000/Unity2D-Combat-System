@@ -2,109 +2,185 @@ using UnityEngine;
 
 public class Enemy : BaseCharacter
 {
-    [Header("Detection Settings")]
-    [SerializeField] private float detectionRange = 5f; // Increased a bit for easier testing
+    [Header("=== DETECTION ===")]
+    [SerializeField] private float detectionRange = 6f;     // 🟡 Yellow - Spots player
+    [SerializeField] private float chaseRange = 4f;          // 🟢 Green - Starts chasing
     [SerializeField] private LayerMask playerLayer;
 
-    [Header("Patrol Settings")]
+    [Header("=== PATROL ===")]
     [SerializeField] private float patrolDuration = 3f;
+    [SerializeField] private float patrolSpeedMultiplier = 1f;
+
+    [Header("=== CHASE ===")]
+    [SerializeField] private float chaseSpeedMultiplier = 1.3f;
+
+    [Header("=== ATTACK ===")]
+    [SerializeField] private float attackRange = 1.5f;       // 🔴 RED - SINGLE SOURCE OF TRUTH
+    [SerializeField] private float attackCooldown = 1.5f;
 
     private EnemyCombat combat;
     private Transform playerTransform;
-    private bool playerDetected;
-
+    
+    private enum EnemyState { Patrolling, Chasing, Attacking }
+    private EnemyState currentState = EnemyState.Patrolling;
+    
     private float patrolTimer;
-    private float patrolDirection = 1f; // 1 right, -1 left
+    private float patrolDirection = 1f;
+    private float lastAttackTime;
+    private bool playerInDetection;
 
     protected override void Awake()
     {
         base.Awake();
         combat = GetComponent<EnemyCombat>();
+        if (combat == null) Debug.LogError("EnemyCombat missing!", this);
     }
 
     protected override void Update()
     {
-        if (isKnocked) 
+        if (isKnocked || !canMove) 
         {
-            // Still update ground and animation during knockback
             HandleGroundCheckCollions();
             HandleAnimation();
             HandleFlip();
             return;
         }
 
-        // Main logic
         HandleDetection();
-        HandlePatrol();
+        UpdateStateMachine();
         HandleMovement();
-        HandleAttack();  // NEW: Actually try to attack
+        HandleAttack();
 
-        // Base handles the rest (ground, animation, flip) - called at end for correct order
         HandleGroundCheckCollions();
         HandleAnimation();
-        HandleFlip();
+        HandleFlip(); // ← This handles ALL flipping perfectly
     }
 
     private void HandleDetection()
     {
         Collider2D hit = Physics2D.OverlapCircle(transform.position, detectionRange, playerLayer);
-        playerDetected = hit != null;
-        playerTransform = playerDetected ? hit.transform : null;
+        playerInDetection = hit != null;
+        playerTransform = playerInDetection ? hit.transform : null;
+    }
+
+    private void UpdateStateMachine()
+    {
+        if (!playerInDetection)
+        {
+            currentState = EnemyState.Patrolling;
+            return;
+        }
+
+        float distanceToPlayer = Vector2.Distance(transform.position, playerTransform.position);
+
+        if (distanceToPlayer <= attackRange && Time.time >= lastAttackTime + attackCooldown)
+        {
+            currentState = EnemyState.Attacking;
+        }
+        else if (distanceToPlayer <= chaseRange)
+        {
+            currentState = EnemyState.Chasing;
+        }
+        else
+        {
+            currentState = EnemyState.Patrolling;
+        }
     }
 
     private void HandlePatrol()
     {
-        if (!playerDetected && canMove)
+        patrolTimer += Time.deltaTime;
+        if (patrolTimer >= patrolDuration)
         {
-            patrolTimer += Time.deltaTime;
-            if (patrolTimer >= patrolDuration)
-            {
-                patrolDirection *= -1;
-                patrolTimer = 0;
-                // Force flip when changing patrol direction
-                facingRight = patrolDirection > 0;
-                Flip();
-            }
+            patrolDirection *= -1;
+            patrolTimer = 0;
         }
     }
 
     protected override void HandleMovement()
     {
-        if (!canMove) return;
+        float targetSpeed = speed;
 
-        float targetVelocityX;
+        switch (currentState)
+        {
+            case EnemyState.Patrolling:
+                HandlePatrol();
+                targetSpeed *= patrolSpeedMultiplier;
+                rb.linearVelocity = new Vector2(patrolDirection * targetSpeed, rb.linearVelocity.y);
+                break;
 
-        if (playerDetected && combat != null && combat.IsAttacking)
-        {
-            targetVelocityX = 0; // Stop completely during attack
-        }
-        else if (playerDetected)
-        {
-            targetVelocityX = 0; // Stop when player near (face them)
-        }
-        else
-        {
-            targetVelocityX = patrolDirection * speed; // Patrol
-        }
+            case EnemyState.Chasing:
+                // Chase player!
+                float chaseDirection = Mathf.Sign(playerTransform.position.x - transform.position.x);
+                targetSpeed *= chaseSpeedMultiplier;
+                rb.linearVelocity = new Vector2(chaseDirection * targetSpeed, rb.linearVelocity.y);
+                break;
 
-        rb.linearVelocity = new Vector2(targetVelocityX, rb.linearVelocity.y);
+            case EnemyState.Attacking:
+                rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
+                break;
+        }
     }
 
-    private void HandleAttack()  // NEW: Not override, just private method
+    private void HandleAttack()
     {
-        if (playerDetected && playerTransform != null && combat != null && canMove)
+        if (currentState == EnemyState.Attacking && playerTransform != null && combat != null)
         {
-            combat.TryAttack(playerTransform);
+            float distanceToPlayer = Vector2.Distance(transform.position, playerTransform.position);
+            if (distanceToPlayer <= attackRange)
+            {
+                if (combat.TryAttack(playerTransform, attackRange)) // ← PASS attackRange!
+                {
+                    lastAttackTime = Time.time;
+                    currentState = EnemyState.Chasing; // Resume chasing after attack
+                }
+                else
+                {
+                    currentState = EnemyState.Chasing; // Couldn't attack, resume chasing
+                }
+            }
         }
     }
 
-    // REMOVE your override HandleAnimation() entirely - let base do it!
+    // FIXED FLIPPING - Handles ALL cases perfectly!
+    protected override void HandleFlip()
+    {
+        float velocityX = rb.linearVelocity.x;
+        
+        // Case 1: Patrolling - flip based on patrol direction
+        if (currentState == EnemyState.Patrolling && Mathf.Abs(velocityX) > flipDeadZone)
+        {
+            bool shouldFaceRight = velocityX > 0;
+            if (shouldFaceRight != facingRight)
+                Flip();
+        }
+        // Case 2: Chasing/Attacking - face player direction
+        else if ((currentState == EnemyState.Chasing || currentState == EnemyState.Attacking) 
+                 && playerTransform != null)
+        {
+            bool shouldFaceRight = playerTransform.position.x > transform.position.x;
+            if (shouldFaceRight != facingRight)
+                Flip();
+        }
+    }
 
-    // Optional: Better gizmo
     protected override void OnDrawGizmosSelected()
     {
         base.OnDrawGizmosSelected();
+        
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRange);
+        
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(transform.position, chaseRange);
+        
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, attackRange);
+        
+        #if UNITY_EDITOR
+        UnityEditor.Handles.Label(transform.position + Vector3.up * (detectionRange + 0.5f), "🟡 Detect");
+        UnityEditor.Handles.Label(transform.position + Vector3.up * (chaseRange + 0.5f), "🟢 Chase");
+        UnityEditor.Handles.Label(transform.position + Vector3.right * (attackRange + 0.5f), "🔴 Attack");
+        #endif
     }
 }

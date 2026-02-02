@@ -27,11 +27,30 @@ public class Health : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
+        // ────────────────────────────────────────────────
+        //  NEW: DASH INVINCIBILITY CHECK
+        // ────────────────────────────────────────────────
+        if (CompareTag("Player"))
+        {
+            PlayerScript player = GetComponent<PlayerScript>();
+            if (player != null && player.IsInvincible)
+            {
+                // Optional: visual/audio feedback that attack was "blocked"
+                // animator.SetTrigger("DashBlock");  // if you want later
+                // AudioSource.PlayClipAtPoint(blockSound, transform.position);
+                return;  // ← completely ignore damage during dash
+            }
+        }
+
+        // ────────────────────────────────────────────────
+        //  Existing code below — only runs if NOT invincible
+        // ────────────────────────────────────────────────
+
         // Always play hit feedback (shake + sparks)
         animator.SetTrigger("Hit");
         var camFollow = Object.FindFirstObjectByType<CameraFollowWithLookAhead>();
         if (camFollow != null)
-            camFollow.TriggerShake(0.15f, 0.5f);
+            camFollow.TriggerShake(0.15f);
 
         if (hitSparkPrefab != null)
         {
@@ -45,8 +64,7 @@ public class Health : MonoBehaviour
         // PLAYER-ONLY Infinite Health
         if (CheatManager.Instance != null && CheatManager.Instance.PlayerInfiniteHealth && CompareTag("Player"))
         {
-            Debug.Log($"<color=cyan>🛡️ PLAYER GOD MODE: {gameObject.name} took 0 damage!</color>");
-            return; // Player invincible
+            return; // Player invincible (cheat mode)
         }
     #endif
 
