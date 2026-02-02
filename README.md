@@ -5,7 +5,7 @@ The goal was clean code structure, proper animation timing, and solid core gamep
 
 ## Demo Video and Images During Start of Project 
 
-![Player attacking](Assets/README-Image/Demo.gif)
+![Player attacking](Assets/README-Image/Demo1.gif)
 
 ![My Game Screenshot1](Assets/README-Image/Image1.png)
 
@@ -13,7 +13,7 @@ The goal was clean code structure, proper animation timing, and solid core gamep
 
 ## Demo Video
 
-<video src="Assets/README-Image/Demo.mp4" controls muted playsinline width="800"></video>
+<video src="Assets/README-Image/PlayThrough.mp4" controls muted playsinline width="800"></video>
 
 *(If the embedded video doesn't play, open `Assets/README-Image/Demo.mp4` directly in your media player.)*
 
